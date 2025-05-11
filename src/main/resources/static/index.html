@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+    <title>WebSocket Scrum Poker Application</title>
+    <link rel="stylesheet" href="/css/main.css" />
+</head>
+<body>
+<noscript>
+    <h2>Sorry! Your browser doesn't support Javascript</h2>
+</noscript>
+
+<div class="container">
+    <button id="generateGameBtn">Generate Game</button>
+</div>
+
+<div id="username-page">
+    <div class="username-page-container">
+        <h1 class="title">Type your username to enter the Poker room</h1>
+        <form id="usernameForm" name="usernameForm">
+            <div class="form-group">
+                <input type="text" id="name" placeholder="Username" autocomplete="off" class="form-control" />
+            </div>
+            <div class="form-group">
+                <button type="submit" class="accent username-submit">Start Poker</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="chat-page" class="hidden">
+    <div class="chat-container">
+        <div class="chat-header">
+            <h2>WebSocket Scrum Poker</h2>
+        </div>
+        <div class="connecting">Connecting...</div>
+        <ul id="messageArea"></ul>
+
+        <form id="messageForm" name="messageForm">
+            <label for="voteButtons">Wybierz swój głos:</label>
+            <div id="voteButtons">
+                <button type="button" class="vote-btn" data-value="2">2</button>
+                <button type="button" class="vote-btn" data-value="3">3</button>
+                <button type="button" class="vote-btn" data-value="5">5</button>
+                <button type="button" class="vote-btn" data-value="7">7</button>
+                <button type="button" class="vote-btn" data-value="11">11</button>
+                <button type="button" class="vote-btn" data-value="13">13</button>
+                <button type="button" class="vote-btn" data-value="17">17</button>
+                <button type="button" class="vote-btn" data-value="19">19</button>
+                <button type="button" class="vote-btn" data-value="23">23</button>
+                <button type="button" class="vote-btn" data-value="?">?</button>
+            </div>
+        </form>
+
+        <div style="margin-top: 10px;">
+            <button id="showVotesBtn" class="accent">Pokaż wszystkie głosy</button>
+            <button id="clearVotesBtn" class="secondary" style="margin-left: 10px;">Wyczyść wszystkie głosy</button>
+            <pre id="votesOutput"></pre>
+        </div>
+    </div>
+</div>
+
+<div style="position: absolute; top: 80px; right: 10px; width: 200px;">
+    <h4>Uczestnicy:</h4>
+    <ul id="userList" class="user-list" style="list-style:none; padding-left:0;"></ul>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.1.4/sockjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+<script src="/js/main.js"></script>
+</body>
+</html>
