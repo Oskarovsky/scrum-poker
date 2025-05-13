@@ -3,11 +3,9 @@ package com.slyko.socketpoker.poker;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -15,30 +13,32 @@ import java.util.stream.Collectors;
 import static com.slyko.socketpoker.poker.MessageType.*;
 import static com.slyko.socketpoker.poker.PokerService.POKER_MAP;
 
+@Slf4j
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
 public class PokerRestController {
 
+    private final PokerService pokerService;
     private final SimpMessagingTemplate messagingTemplate;
 
-    @GetMapping("/votes")
-    public Map<String, String> getAllVotes() {
-        return POKER_MAP;
+    @GetMapping("/votes/{roomId}")
+    public Map<String, String> getVotes(@PathVariable String roomId) {
+        return pokerService.getVotes(roomId);
     }
 
-    @DeleteMapping("/votes")
-    public void clearVotes() {
-        POKER_MAP.forEach((key, value) -> POKER_MAP.put(key, "NIC"));
+    @DeleteMapping("/votes/{roomId}")
+    public void clearVotes(@PathVariable String roomId) {
+        pokerService.clearVotes(roomId);
 
-        // Broadcast CLEAR event to all users via WebSocket
         ChatMessage clearMessage = new ChatMessage();
         clearMessage.setType(CLEAR);
         clearMessage.setSender("SYSTEM");
-        clearMessage.setContent("Wszystkie głosy zostały wyczyszczone.");
+        clearMessage.setContent("Głosy wyczyszczone.");
+        clearMessage.setRoomId(roomId);
 
-        messagingTemplate.convertAndSend("/topic/public", clearMessage);
-        broadcastUserStatus();
+        messagingTemplate.convertAndSend("/topic/" + roomId, clearMessage);
+        broadcastUserStatus(roomId);
     }
 
     // Endpoint do wysyłania wszystkich głosów do wszystkich użytkowników
@@ -67,22 +67,23 @@ public class PokerRestController {
                 ));
     }
 
-    private void broadcastUserStatus() {
-        Map<String, Boolean> status = POKER_MAP.entrySet().stream()
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        e -> e.getValue() != null && !e.getValue().isEmpty()
-                ));
+    @GetMapping("/users/{roomId}")
+    public Map<String, Boolean> getUsersStatus(@PathVariable String roomId) {
+        return pokerService.getVotingStatus(roomId);
+    }
 
+    private void broadcastUserStatus(String roomId) {
+        Map<String, Boolean> status = pokerService.getVotingStatus(roomId);
         ChatMessage userStatusMsg = new ChatMessage();
         userStatusMsg.setType(USERS);
         userStatusMsg.setSender("SYSTEM");
+        userStatusMsg.setRoomId(roomId);
         try {
-            userStatusMsg.setContent(new ObjectMapper().writeValueAsString(status)); // JSON
+            userStatusMsg.setContent(new ObjectMapper().writeValueAsString(status));
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
 
-        messagingTemplate.convertAndSend("/topic/public", userStatusMsg);
+        messagingTemplate.convertAndSend("/topic/" + roomId, userStatusMsg);
     }
 }

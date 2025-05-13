@@ -1,65 +1,80 @@
 'use strict';
 
-var usernamePage = document.querySelector('#username-page');
-var chatPage = document.querySelector('#chat-page');
-var usernameForm = document.querySelector('#usernameForm');
-var messageForm = document.querySelector('#messageForm');
-var messageInput = document.querySelector('#message');
-var messageArea = document.querySelector('#messageArea');
-var connectingElement = document.querySelector('.connecting');
+let stompClient = null;
+let username = null;
+let roomId = null;
+let userVote = null;
+let hasAnnouncedVote = false;
 
-var stompClient = null;
-var username = null;
 
-var colors = [
+const usernamePage = document.querySelector('#username-page');
+const chatPage = document.querySelector('#chat-page');
+const usernameForm = document.querySelector('#usernameForm');
+const messageForm = document.querySelector('#messageForm');
+const messageInput = document.querySelector('#message');
+const messageArea = document.querySelector('#messageArea');
+const connectingElement = document.querySelector('.connecting');
+
+const colors = [
     '#2196F3', '#32c787', '#00BCD4', '#ff5652',
     '#ffc107', '#ff85af', '#FF9800', '#39bbb0'
 ];
 
+function extractRoomId() {
+    const parts = window.location.pathname.split('/');
+    roomId = parts.includes('game') ? parts[parts.length - 1] : 'default';
+}
+
 function connect(event) {
     username = document.querySelector('#name').value.trim();
+    if (!username) return;
 
-    if(username) {
-        usernamePage.classList.add('hidden');
-        chatPage.classList.remove('hidden');
+    extractRoomId();
 
-        var socket = new SockJS('/ws');
-        stompClient = Stomp.over(socket);
+    usernamePage.classList.add('hidden');
+    chatPage.classList.remove('hidden');
 
-        stompClient.connect({}, onConnected, onError);
-    }
+    const socket = new SockJS('/ws');
+    stompClient = Stomp.over(socket);
+    stompClient.connect({}, onConnected, onError);
     event.preventDefault();
 }
 
-
 function onConnected() {
-    // Subscribe to the Public Topic
-    stompClient.subscribe('/topic/public', onMessageReceived);
+    stompClient.subscribe('/topic/' + roomId, onMessageReceived);
 
-    // Tell your username to the server
-    stompClient.send("/app/chat.addUser",
-        {},
-        JSON.stringify({sender: username, type: 'JOIN'})
-    )
-
+    stompClient.send("/app/chat.addUser", {}, JSON.stringify({
+        sender: username,
+        type: 'JOIN',
+        roomId: roomId
+    }));
     connectingElement.classList.add('hidden');
 }
 
-
 function onError(error) {
-    connectingElement.textContent = 'Could not connect to WebSocket server. Please refresh this page to try again!';
+    connectingElement.textContent = 'Nie można połączyć się z serwerem. Odśwież stronę.';
     connectingElement.style.color = 'red';
 }
 
+window.addEventListener('beforeunload', () => {
+    if (stompClient && stompClient.connected) {
+        stompClient.send("/app/chat.sendMessage", {}, JSON.stringify({
+            sender: username,
+            type: 'LEAVE',
+            roomId: roomId
+        }));
+        stompClient.disconnect(); // Zamknij połączenie WebSocket
+    }
+});
 
 function sendMessage(event) {
-    var messageContent = messageInput.value.trim();
-    if(messageContent && stompClient) {
-        var chatMessage = {
+    const messageContent = messageInput.value.trim();
+    if (messageContent && stompClient) {
+        const chatMessage = {
             sender: username,
-            content: messageInput.value,
+            content: messageContent,
             type: 'CHAT',
-            roomId: "0xx"
+            roomId: roomId
         };
         stompClient.send("/app/chat.sendMessage", {}, JSON.stringify(chatMessage));
         messageInput.value = '';
@@ -67,182 +82,196 @@ function sendMessage(event) {
     event.preventDefault();
 }
 
-
 function onMessageReceived(payload) {
-    var message = JSON.parse(payload.body);
+    const message = JSON.parse(payload.body);
+    console.log("ODEBRANO WIADOMOŚĆ:", message);
 
-    var messageElement = document.createElement('li');
+    const messageElement = document.createElement('li');
 
+    // Typ: USERS → aktualizacja listy użytkowników
     if (message.type === 'USERS') {
-        updateUserList(message.content);  // zawiera JSON string z mapą
+        updateUserList(message.content);
         return;
-    } else if (message.type === 'JOIN') {
+    }
+
+    // Typ: UPDATE_VOTE → tylko backend, bez wyświetlania
+    if (message.type === 'UPDATE_VOTE') {
+        return;
+    }
+
+    // Typy systemowe: JOIN / LEAVE / CLEAR
+    if (['JOIN', 'LEAVE', 'CLEAR'].includes(message.type)) {
         messageElement.classList.add('event-message');
-        message.content = message.sender + ' joined!';
-    } else if (message.type === 'LEAVE') {
-        messageElement.classList.add('event-message');
-        message.content = message.sender + ' left!';
-    } else if (message.type === 'CLEAR') {
-        messageElement.classList.add('event-message');
-        message.content = "Wszystkie głosy zostały wyczyszczone.";
-    } else if (message.type === 'VOTES') {
+
+        let contentText = '';
+
+        if (message.type === 'JOIN') {
+            contentText = `${message.sender} dołączył!`;
+        } else if (message.type === 'LEAVE') {
+            contentText = `${message.sender} opuścił grę!`;
+        } else if (message.type === 'CLEAR') {
+            if (message.sender === 'SYSTEM') return;
+            contentText = `${message.sender} wyczyścił wyniki głosowania.`;
+
+            // Reset lokalnego stanu
+            userVote = null;
+            hasAnnouncedVote = false;
+            document.querySelectorAll('.vote-btn').forEach(b => b.classList.remove('selected'));
+
+            const votesOutput = document.getElementById('votesOutput');
+            if (votesOutput) {
+                votesOutput.textContent = '';
+            }
+        }
+
+        const textElement = document.createElement('p');
+        textElement.textContent = contentText;
+        messageElement.appendChild(textElement);
+        messageArea.appendChild(messageElement);
+        messageArea.scrollTop = messageArea.scrollHeight;
+        return;
+    }
+
+    // Typ: VOTES → preformatowany blok z wynikami
+    if (message.type === 'VOTES') {
         messageElement.classList.add('votes-message');
-        message.content = "Głosy wszystkich użytkowników:\n" + message.content;
-    } else {
-        // Zwykła wiadomość użytkownika
-        messageElement.classList.add('chat-message');
 
-        var avatarElement = document.createElement('i');
-        var avatarText = document.createTextNode(message.sender[0]);
-        avatarElement.appendChild(avatarText);
-        avatarElement.style['background-color'] = getAvatarColor(message.sender);
+        const votesBlock = document.createElement('pre');
+        votesBlock.style.whiteSpace = 'pre-wrap';
+        votesBlock.style.margin = '0';
+        votesBlock.textContent = message.content;
 
-        messageElement.appendChild(avatarElement);
-
-        var usernameElement = document.createElement('span');
-        var usernameText = document.createTextNode(message.sender);
-        usernameElement.appendChild(usernameText);
-        messageElement.appendChild(usernameElement);
+        messageElement.appendChild(votesBlock);
+        messageArea.appendChild(messageElement);
+        messageArea.scrollTop = messageArea.scrollHeight;
+        return;
     }
 
-    // Treść wiadomości z prefiksem
-    var textElement = document.createElement('p');
-    var prefixedContent = message.content;
+    // Typ domyślny: CHAT – zwykła wiadomość (np. głos oddany)
+    messageElement.classList.add('chat-message');
 
-    // Dodaj prefix tylko do wiadomości CHAT
-    if (message.type === 'CHAT') {
-        prefixedContent = `[${message.sender}] już zagłosował!`; // Prefix do wiadomości CHAT
-    }
+    const avatarElement = document.createElement('i');
+    avatarElement.textContent = message.sender[0];
+    avatarElement.style.backgroundColor = getAvatarColor(message.sender);
+    messageElement.appendChild(avatarElement);
 
-    var messageText = document.createTextNode(prefixedContent);
-    textElement.appendChild(messageText);
+    const usernameElement = document.createElement('span');
+    usernameElement.textContent = message.sender;
+    messageElement.appendChild(usernameElement);
+
+    const textElement = document.createElement('p');
+    textElement.textContent = message.type === 'CHAT'
+        ? `[${message.sender}] zagłosował!`
+        : message.content;
 
     messageElement.appendChild(textElement);
-
-    // Dodaj wiadomość do obszaru chatu
     messageArea.appendChild(messageElement);
     messageArea.scrollTop = messageArea.scrollHeight;
 }
 
+
 function updateUserList(jsonContent) {
-    const userMap = JSON.parse(jsonContent);
+    const users = JSON.parse(jsonContent);
     const userList = document.getElementById('userList');
     userList.innerHTML = '';
 
-    for (let user in userMap) {
+    for (const user in users) {
         const li = document.createElement('li');
-        li.textContent = `${user} ${userMap[user] ? '✅' : '❌'}`;
+        li.textContent = `${user} ${users[user] ? '✅' : '❌'}`;
         userList.appendChild(li);
     }
 }
 
-function getAvatarColor(messageSender) {
-    var hash = 0;
-    for (var i = 0; i < messageSender.length; i++) {
-        hash = 31 * hash + messageSender.charCodeAt(i);
+function getAvatarColor(name) {
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+        hash = 31 * hash + name.charCodeAt(i);
     }
-    var index = Math.abs(hash % colors.length);
-    return colors[index];
+    return colors[Math.abs(hash % colors.length)];
 }
 
-document.querySelector('#showVotesBtn').addEventListener('click', function() {
-    // Wysyłanie zapytania do API o głosy
-    fetch('/api/votes')
-        .then(response => response.json())
+document.getElementById('generateGameBtn').addEventListener('click', () => {
+    // Wyślij zapytanie do backendu, aby stworzyć nowy pokój
+    fetch('/api/generateGame')
+        .then(res => res.json())
         .then(data => {
-            let output = '';
-            for (let user in data) {
-                output += `${user}: ${data[user]}\n`;
-            }
-
-            document.querySelector('#votesOutput').textContent = output || "Brak głosów.";
-
-            // Wysyłanie głosów przez WebSocket na temat VOTES
-            var votesMessage = {
-                type: 'VOTES',
-                content: output
-            };
-            stompClient.send("/app/chat.sendMessage", {}, JSON.stringify(votesMessage));
+            // Przekierowanie użytkownika do nowo utworzonego pokoju
+            const sessionId = data.sessionId;  // Zakłada, że backend zwraca sessionId
+            window.location.href = `/game/${sessionId}`;
         })
         .catch(err => {
-            alert('Błąd podczas pobierania danych z serwera');
-            console.error(err);
+            console.error("Błąd przy generowaniu pokoju:", err);
         });
 });
-
-document.addEventListener("DOMContentLoaded", function () {
-    const votesBtn = document.getElementById('showVotesBtn');
-    const clearBtn = document.getElementById('clearVotesBtn');
-    const votesOutput = document.getElementById('votesOutput');
-    const messageArea = document.getElementById('messageArea');
-
-    if (votesBtn) {
-        votesBtn.addEventListener('click', function () {
-            fetch('/api/votes')
-                .then(response => response.json())
-                .then(data => {
-                    let output = '';
-                    for (let user in data) {
-                        output += `${user}: ${data[user]}\n`;
-                    }
-                    votesOutput.textContent = output || "Brak głosów.";
-                })
-                .catch(err => {
-                    alert('Błąd podczas pobierania głosów z serwera');
-                    console.error(err);
-                });
-        });
-    }
-
-    if (clearBtn) {
-        clearBtn.addEventListener('click', function () {
-            fetch('/api/votes', { method: 'DELETE' })
-                .then(() => {
-                    votesOutput.textContent = '';
-                    messageArea.innerHTML = ''; // czyści wszystkie wiadomości z chatu
-                    alert('Głosy i czat zostały wyczyszczone.');
-                })
-                .catch(err => {
-                    alert('Błąd podczas czyszczenia danych');
-                    console.error(err);
-                });
-        });
-    }
-});
-
-// JavaScript do obsługi przycisku "Generate Game"
-document.getElementById('generateGameBtn').addEventListener('click', function () {
-    // Generowanie unikalnego identyfikatora sesji (np. UUID lub losowy ciąg)
-    const sessionId = generateUniqueSessionId();
-
-    // Przekierowanie użytkownika do nowego URL z identyfikatorem sesji
-    window.location.href = `/game/${sessionId}`;
-});
-
-// Funkcja do generowania unikalnego identyfikatora sesji
-function generateUniqueSessionId() {
-    return 'game-' + Math.random().toString(36).substr(2, 9);  // Generuje losowy identyfikator
-}
 
 document.querySelectorAll('.vote-btn').forEach(btn => {
-    btn.addEventListener('click', function () {
-        const selectedValue = this.getAttribute('data-value');
+    btn.addEventListener('click', () => {
+        const vote = btn.getAttribute('data-value');
 
-        if (selectedValue && stompClient) {
-            const chatMessage = {
+        // Podświetlenie wyboru
+        document.querySelectorAll('.vote-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+
+        userVote = vote;
+
+        if (stompClient && username) {
+            stompClient.send("/app/chat.sendMessage", {}, JSON.stringify({
                 sender: username,
-                content: selectedValue,
-                type: 'CHAT',
-                roomId: "0xx"
-            };
+                content: vote,
+                type: 'UPDATE_VOTE', // Typ dla zmiany, nie ogłaszaj na czacie
+                roomId: roomId
+            }));
 
-            stompClient.send("/app/chat.sendMessage", {}, JSON.stringify(chatMessage));
+            if (!hasAnnouncedVote) {
+                hasAnnouncedVote = true;
+
+                stompClient.send("/app/chat.sendMessage", {}, JSON.stringify({
+                    sender: username,
+                    content: vote,
+                    type: 'CHAT', // Typ ogłoszenia na czacie
+                    roomId: roomId
+                }));
+            }
         }
     });
 });
 
+document.getElementById('showVotesBtn').addEventListener('click', () => {
+    fetch(`/api/votes/${roomId}`)
+        .then(res => res.json())
+        .then(data => {
+            const votes = Object.entries(data);
+            const output = votes.map(([user, vote]) => `${user}: ${vote}`).join('\n');
 
+            const numericVotes = votes
+                .map(([_, vote]) => parseFloat(vote))
+                .filter(v => !isNaN(v));
 
+            const avg = numericVotes.length > 0
+                ? (numericVotes.reduce((a, b) => a + b, 0) / numericVotes.length).toFixed(2)
+                : 'Brak liczbowych głosów';
 
-usernameForm.addEventListener('submit', connect, true)
-messageForm.addEventListener('submit', sendMessage, true)
+            const finalOutput = `📊 *Wyniki głosowania:*\n${output}\n\n➡️ Średnia: ${avg}`;
+
+            stompClient.send("/app/chat.sendMessage", {}, JSON.stringify({
+                type: 'VOTES',
+                content: finalOutput,
+                roomId: roomId
+            }));
+        });
+});
+
+document.getElementById('clearVotesBtn').addEventListener('click', () => {
+    fetch(`/api/votes/${roomId}`, { method: 'DELETE' })
+        .then(() => {
+            console.log("Wysyłam wiadomość CLEAR");
+            stompClient.send("/app/chat.sendMessage", {}, JSON.stringify({
+                type: 'CLEAR',
+                sender: username,
+                roomId: roomId
+            }));
+        });
+});
+
+usernameForm.addEventListener('submit', connect, true);
+messageForm.addEventListener('submit', sendMessage, true);

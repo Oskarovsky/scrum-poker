@@ -1,72 +1,95 @@
 <!DOCTYPE html>
-<html>
+<html lang="pl">
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
-    <title>WebSocket Scrum Poker Application</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Scrum Poker</title>
     <link rel="stylesheet" href="/css/main.css" />
 </head>
 <body>
+
 <noscript>
-    <h2>Sorry! Your browser doesn't support Javascript</h2>
+    <h2>Twoja przeglądarka nie obsługuje JavaScript. Aplikacja nie zadziała.</h2>
 </noscript>
 
-<div class="container">
-    <button id="generateGameBtn">Generate Game</button>
-</div>
+<main class="container">
 
-<div id="username-page">
-    <div class="username-page-container">
-        <h1 class="title">Type your username to enter the Poker room</h1>
-        <form id="usernameForm" name="usernameForm">
-            <div class="form-group">
-                <input type="text" id="name" placeholder="Username" autocomplete="off" class="form-control" />
-            </div>
-            <div class="form-group">
-                <button type="submit" class="accent username-submit">Start Poker</button>
-            </div>
-        </form>
+    <!-- Przycisk do tworzenia nowej gry -->
+    <div style="margin-top: 20px;">
+        <button id="generateGameBtn" class="accent">Stwórz nową grę</button>
     </div>
-</div>
 
-<div id="chat-page" class="hidden">
-    <div class="chat-container">
-        <div class="chat-header">
-            <h2>WebSocket Scrum Poker</h2>
+    <!-- Strona logowania -->
+    <section id="username-page">
+        <div class="username-page-container">
+            <h1 class="title">Podaj nazwę użytkownika, aby dołączyć do pokoju</h1>
+            <form id="usernameForm">
+                <div class="form-group">
+                    <label for="name" class="visually-hidden">Nazwa użytkownika</label>
+                    <input type="text" id="name" placeholder="Nazwa użytkownika" autocomplete="off" class="form-control" required />
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="accent username-submit">Dołącz</button>
+                </div>
+            </form>
         </div>
-        <div class="connecting">Connecting...</div>
-        <ul id="messageArea"></ul>
+    </section>
 
-        <form id="messageForm" name="messageForm">
-            <label for="voteButtons">Wybierz swój głos:</label>
-            <div id="voteButtons">
-                <button type="button" class="vote-btn" data-value="2">2</button>
-                <button type="button" class="vote-btn" data-value="3">3</button>
-                <button type="button" class="vote-btn" data-value="5">5</button>
-                <button type="button" class="vote-btn" data-value="7">7</button>
-                <button type="button" class="vote-btn" data-value="11">11</button>
-                <button type="button" class="vote-btn" data-value="13">13</button>
-                <button type="button" class="vote-btn" data-value="17">17</button>
-                <button type="button" class="vote-btn" data-value="19">19</button>
-                <button type="button" class="vote-btn" data-value="23">23</button>
-                <button type="button" class="vote-btn" data-value="?">?</button>
+    <!-- Strona czatu -->
+    <section id="chat-page" class="hidden">
+        <div class="chat-container">
+
+            <header class="chat-header">
+                <h2>Scrum Poker – pokój WebSocket</h2>
+            </header>
+
+            <div class="connecting">Łączenie...</div>
+
+            <!-- Obszar wiadomości -->
+            <ul id="messageArea" class="message-area"></ul>
+
+            <!-- Przyciski głosowania -->
+            <form id="messageForm" name="messageForm">
+                <label for="voteButtons"><strong>Wybierz swój głos:</strong></label>
+                <div id="voteButtons" class="vote-grid">
+                    <!-- Przyciski głosowania -->
+                    <button type="button" class="vote-btn" data-value="0.5">0.5</button>
+                    <button type="button" class="vote-btn" data-value="1">1</button>
+                    <button type="button" class="vote-btn" data-value="1.5">1.5</button>
+                    <button type="button" class="vote-btn" data-value="2">2</button>
+                    <button type="button" class="vote-btn" data-value="3">3</button>
+                    <button type="button" class="vote-btn" data-value="5">5</button>
+                    <button type="button" class="vote-btn" data-value="7">7</button>
+                    <button type="button" class="vote-btn" data-value="11">11</button>
+                    <button type="button" class="vote-btn" data-value="13">13</button>
+                    <button type="button" class="vote-btn" data-value="17">17</button>
+                    <button type="button" class="vote-btn" data-value="19">19</button>
+                    <button type="button" class="vote-btn" data-value="23">23</button>
+                    <button type="button" class="vote-btn" data-value="?">?</button>
+                </div>
+            </form>
+
+            <!-- Kontrola głosów -->
+            <div style="margin-top: 10px;">
+                <button id="showVotesBtn" class="accent">Pokaż wszystkie głosy</button>
+                <button id="clearVotesBtn" class="secondary" style="margin-left: 10px;">Wyczyść wszystkie głosy</button>
             </div>
-        </form>
 
-        <div style="margin-top: 10px;">
-            <button id="showVotesBtn" class="accent">Pokaż wszystkie głosy</button>
-            <button id="clearVotesBtn" class="secondary" style="margin-left: 10px;">Wyczyść wszystkie głosy</button>
-            <pre id="votesOutput"></pre>
         </div>
-    </div>
-</div>
+    </section>
 
-<div style="position: absolute; top: 80px; right: 10px; width: 200px;">
-    <h4>Uczestnicy:</h4>
-    <ul id="userList" class="user-list" style="list-style:none; padding-left:0;"></ul>
-</div>
+    <!-- Lista uczestników -->
+    <aside class="user-sidebar" style="position: absolute; top: 80px; right: 10px; width: 200px;">
+        <h4>Uczestnicy:</h4>
+        <ul id="userList" class="user-list" style="list-style: none; padding-left: 0;"></ul>
+    </aside>
 
+</main>
+
+<!-- Skrypty -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.1.4/sockjs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
 <script src="/js/main.js"></script>
+
 </body>
 </html>
