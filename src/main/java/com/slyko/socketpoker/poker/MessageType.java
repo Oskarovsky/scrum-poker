@@ -7,6 +7,7 @@ public enum MessageType {
     VOTES,
     LEAVE,
     USERS,
+    UPDATE_VOTE,
     PRIVATE_CHAT,
     INFO,
     CLEAR

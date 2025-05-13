@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import static com.slyko.socketpoker.poker.MessageType.LEAVE;
 import static com.slyko.socketpoker.poker.MessageType.USERS;
 import static com.slyko.socketpoker.poker.PokerService.POKER_MAP;
 
@@ -26,45 +27,45 @@ public class PokerController {
 
     @MessageMapping("/chat.sendMessage")
     @SendTo("/topic/public")
-    public ChatMessage sendMessage(
+    public void sendMessage(
             @Payload ChatMessage chatMessage
     ) {
-        if (chatMessage.getSender() != null && chatMessage.getContent() != null) {
-            pokerService.updateVote(chatMessage.getSender(), chatMessage.getContent());
-            broadcastUserStatus();
+        String roomId = chatMessage.getRoomId();
+        if (roomId == null) return;
+
+        if (chatMessage.getType() == LEAVE) {
+            pokerService.removeUser(roomId, chatMessage.getSender());
         }
-        return chatMessage;
+
+        pokerService.updateVote(roomId, chatMessage.getSender(), chatMessage.getContent());
+        messagingTemplate.convertAndSend("/topic/" + roomId, chatMessage);
+        broadcastUserStatus(roomId);
     }
+
 
     @MessageMapping("/chat.addUser")
     @SendTo("/topic/public")
-    public ChatMessage addUser(
-            @Payload ChatMessage chatMessage,
-            SimpMessageHeaderAccessor headerAccessor
-    ) {
-        // Add username in web socket session
-        pokerService.addUser(chatMessage.getSender());
+    public void addUser(@Payload ChatMessage chatMessage, SimpMessageHeaderAccessor headerAccessor) {
+        String roomId = chatMessage.getRoomId();
+        if (roomId == null) return;
+
+        pokerService.addUser(roomId, chatMessage.getSender());
         Objects.requireNonNull(headerAccessor.getSessionAttributes()).put("username", chatMessage.getSender());
-        broadcastUserStatus();
-        return chatMessage;
+        messagingTemplate.convertAndSend("/topic/" + roomId, chatMessage);
+        broadcastUserStatus(roomId);
     }
 
-    private void broadcastUserStatus() {
-        Map<String, Boolean> status = POKER_MAP.entrySet().stream()
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        e -> e.getValue() != null && !e.getValue().isEmpty()
-                ));
-
+    private void broadcastUserStatus(String roomId) {
+        Map<String, Boolean> status = pokerService.getVotingStatus(roomId);
         ChatMessage userStatusMsg = new ChatMessage();
         userStatusMsg.setType(USERS);
         userStatusMsg.setSender("SYSTEM");
+        userStatusMsg.setRoomId(roomId);
         try {
-            userStatusMsg.setContent(new ObjectMapper().writeValueAsString(status)); // JSON
+            userStatusMsg.setContent(new ObjectMapper().writeValueAsString(status));
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
-
-        messagingTemplate.convertAndSend("/topic/public", userStatusMsg);
+        messagingTemplate.convertAndSend("/topic/" + roomId, userStatusMsg);
     }
 }
