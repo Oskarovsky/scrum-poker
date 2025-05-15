@@ -24,7 +24,7 @@ public class PokerRestController {
 
     @GetMapping("/votes/{roomId}")
     public Map<String, String> getVotes(@PathVariable String roomId) {
-        return pokerService.getVotes(roomId);
+        return pokerService.getOnlyValidVotes(roomId); // <-- używamy nowej metody
     }
 
     @DeleteMapping("/votes/{roomId}")
