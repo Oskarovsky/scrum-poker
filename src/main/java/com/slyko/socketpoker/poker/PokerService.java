@@ -63,4 +63,10 @@ public class PokerService {
             }
         }
     }
+
+    public Map<String, String> getOnlyValidVotes(String roomId) {
+        return ROOM_MAP.getOrDefault(roomId, Map.of()).entrySet().stream()
+                .filter(entry -> entry.getValue() != null && !"NIC".equals(entry.getValue()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
 }
