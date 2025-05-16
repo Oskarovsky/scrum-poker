@@ -1,15 +1,90 @@
 <!DOCTYPE html>
-<html>
+<html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <title>Gra - {{sessionId}}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Scrum Poker</title>
     <link rel="stylesheet" href="/css/main.css" />
 </head>
 <body>
-<h1>Witaj w grze!</h1>
-<p>Twoje unikalne ID pokoju to: <strong>{{sessionId}}</strong></p>
-<button onclick="startGame()">Rozpocznij grę</button>
 
+<noscript>
+    <h2>Twoja przeglądarka nie obsługuje JavaScript. Aplikacja nie zadziała.</h2>
+</noscript>
+
+<main class="container">
+
+    <div class="top-bar">
+        <button id="generateGameBtn" class="accent">Stwórz nową grę</button>
+    </div>
+
+    <!-- Strona logowania -->
+    <section id="username-page">
+        <div class="username-page-container">
+            <h1 class="title">Podaj nazwę użytkownika</h1>
+            <form id="usernameForm">
+                <div class="form-group">
+                    <label for="name" class="visually-hidden">Nazwa użytkownika</label>
+                    <input type="text" id="name" placeholder="Nazwa użytkownika" autocomplete="off" class="form-control" required />
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="accent username-submit">Dołącz</button>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <!-- Strona czatu -->
+    <section id="chat-page" class="hidden">
+        <div class="chat-wrapper">
+            <div class="chat-container">
+
+                <header class="chat-header">
+                    <h2>Scrum Poker – pokój WebSocket</h2>
+                </header>
+
+                <div class="connecting">Łączenie...</div>
+
+                <ul id="messageArea" class="message-area"></ul>
+
+                <form id="messageForm" name="messageForm">
+                    <label for="voteButtons"><strong>Wybierz swój głos:</strong></label>
+                    <div id="voteButtons" class="vote-grid">
+                        <!-- Przyciski głosowania -->
+                        <button type="button" class="vote-btn" data-value="0.5">0.5</button>
+                        <button type="button" class="vote-btn" data-value="1">1</button>
+                        <button type="button" class="vote-btn" data-value="2">2</button>
+                        <button type="button" class="vote-btn" data-value="3">3</button>
+                        <button type="button" class="vote-btn" data-value="5">5</button>
+                        <button type="button" class="vote-btn" data-value="8">8</button>
+                        <button type="button" class="vote-btn" data-value="13">13</button>
+                        <button type="button" class="vote-btn" data-value="20">20</button>
+                        <button type="button" class="vote-btn" data-value="40">40</button>
+                        <button type="button" class="vote-btn" data-value="100">100</button>
+                        <button type="button" class="vote-btn" data-value="?">?</button>
+                    </div>
+                </form>
+
+                <div class="vote-controls">
+                    <button id="showVotesBtn" class="accent">Pokaż wszystkie głosy</button>
+                    <button id="clearVotesBtn" class="secondary">Wyczyść wszystkie głosy</button>
+                </div>
+            </div>
+
+            <!-- Panel boczny -->
+            <aside class="user-sidebar">
+                <h4>Uczestnicy:</h4>
+                <ul id="userList" class="user-list"></ul>
+            </aside>
+        </div>
+    </section>
+</main>
+
+
+<!-- Skrypty -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.1.4/sockjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
 <script src="/js/main.js"></script>
+
 </body>
 </html>
