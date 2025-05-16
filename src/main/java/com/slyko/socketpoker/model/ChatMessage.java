@@ -1,4 +1,4 @@
-package com.slyko.socketpoker.poker;
+package com.slyko.socketpoker.model;
 
 
 import lombok.*;

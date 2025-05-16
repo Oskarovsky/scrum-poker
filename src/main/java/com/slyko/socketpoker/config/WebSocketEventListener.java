@@ -1,7 +1,7 @@
 package com.slyko.socketpoker.config;
 
-import com.slyko.socketpoker.poker.ChatMessage;
-import com.slyko.socketpoker.poker.MessageType;
+import com.slyko.socketpoker.model.ChatMessage;
+import com.slyko.socketpoker.model.MessageType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;

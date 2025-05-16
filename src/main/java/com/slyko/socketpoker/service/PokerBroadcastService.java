@@ -4,8 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Map;
 
-import com.slyko.socketpoker.poker.ChatMessage;
-import com.slyko.socketpoker.poker.MessageType;
+import com.slyko.socketpoker.model.ChatMessage;
+import com.slyko.socketpoker.model.MessageType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
