@@ -389,21 +389,39 @@ body, html {
 .user-list {
     list-style: none;
     padding: 0;
+    margin: 0;
 }
 
 .user-list li {
-    padding: 6px 0;
-    font-size: 16px;
+    padding: 6px 8px;
+    font-size: 14px;
+    border-radius: 5px;
+    margin-bottom: 5px;
+    background-color: #f9f9f9;
+    transition: background-color 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.user-list li.voted {
+    background-color: #e0f7e9;
+}
+
+.user-list li.not-voted {
+    background-color: #fdecea;
 }
 
 .user-list li.voted::before {
-    content: "✅ ";
+    content: "✅";
     color: green;
+    font-size: 14px;
 }
 
 .user-list li.not-voted::before {
-    content: "❌ ";
+    content: "❌";
     color: red;
+    font-size: 14px;
 }
 
 .vote-grid {
@@ -441,4 +459,133 @@ body, html {
     color: white;
     font-weight: bold;
     border: 2px solid #0d47a1;
+}
+
+
+aside.user-sidebar {
+    position: absolute;
+    top: 80px;
+    right: 10px;
+    width: 180px;
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    padding: 15px;
+    font-size: 14px;
+    z-index: 1000;
+}
+
+aside.user-sidebar h4 {
+    margin-top: 0;
+    font-size: 16px;
+    text-align: center;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 5px;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    overflow: hidden;
+}
+
+.container {
+    padding: 20px;
+    height: 100%;
+}
+
+.top-bar {
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.centered-box {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+}
+
+.chat-wrapper {
+    display: flex;
+    height: 100%;
+    gap: 20px;
+}
+
+.chat-container {
+    flex: 3;
+    background: #fff;
+    box-shadow: 0 1px 11px rgba(0, 0, 0, 0.27);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.user-sidebar {
+    flex: 1;
+    background: #fff;
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    overflow-y: auto;
+}
+
+.vote-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.vote-btn {
+    padding: 10px;
+    background: #2196F3;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.vote-btn:hover {
+    background-color: #1976D2;
+}
+
+.vote-btn.selected {
+    background-color: #0d47a1;
+    border: 2px solid #0b3c91;
+}
+
+.vote-controls {
+    margin-top: 15px;
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.user-list li.voted::before {
+    content: "✅ ";
+    color: green;
+}
+
+.user-list li.not-voted::before {
+    content: "❌ ";
+    color: red;
 }
