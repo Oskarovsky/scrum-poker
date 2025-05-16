@@ -1,4 +1,4 @@
-package com.slyko.socketpoker.poker;
+package com.slyko.socketpoker.controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
