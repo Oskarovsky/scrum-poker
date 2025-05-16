@@ -2,7 +2,7 @@ package com.slyko.socketpoker.controller;
 
 import java.util.Map;
 
-import com.slyko.socketpoker.poker.MessageType;
+import com.slyko.socketpoker.model.MessageType;
 import com.slyko.socketpoker.service.PokerBroadcastService;
 import com.slyko.socketpoker.service.PokerService;
 import lombok.RequiredArgsConstructor;

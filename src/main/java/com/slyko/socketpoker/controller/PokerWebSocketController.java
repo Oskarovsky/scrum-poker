@@ -1,7 +1,7 @@
 package com.slyko.socketpoker.controller;
 
-import com.slyko.socketpoker.poker.ChatMessage;
-import com.slyko.socketpoker.poker.MessageType;
+import com.slyko.socketpoker.model.ChatMessage;
+import com.slyko.socketpoker.model.MessageType;
 import com.slyko.socketpoker.service.PokerBroadcastService;
 import com.slyko.socketpoker.service.PokerService;
 import lombok.RequiredArgsConstructor;
