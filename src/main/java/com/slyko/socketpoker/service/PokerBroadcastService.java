@@ -17,29 +17,22 @@ public class PokerBroadcastService {
     private final SimpMessagingTemplate messagingTemplate;
     private final ObjectMapper objectMapper;
 
-    public void broadcastToRoom(String roomId, ChatMessage message) {
-        messagingTemplate.convertAndSend("/topic/" + roomId, message);
-    }
-
     public void broadcastSystemMessage(String roomId, MessageType type, String content) {
-        ChatMessage msg = new ChatMessage();
-        msg.setType(type);
-        msg.setSender("SYSTEM");
-        msg.setRoomId(roomId);
-        msg.setContent(content);
+        ChatMessage msg = new ChatMessage(type, "SYSTEM", roomId, content);
         broadcastToRoom(roomId, msg);
     }
 
     public void broadcastUserStatus(String roomId, Map<String, Boolean> status) {
-        ChatMessage userStatusMsg = new ChatMessage();
-        userStatusMsg.setType(MessageType.USERS);
-        userStatusMsg.setSender("SYSTEM");
-        userStatusMsg.setRoomId(roomId);
         try {
-            userStatusMsg.setContent(objectMapper.writeValueAsString(status));
+            String messageContent = objectMapper.writeValueAsString(status);
+            ChatMessage userStatusMsg = new ChatMessage(MessageType.USERS, "SYSTEM", roomId, messageContent);
+            broadcastToRoom(roomId, userStatusMsg);
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Cannot serialize user status", e);
         }
-        broadcastToRoom(roomId, userStatusMsg);
+    }
+
+    public void broadcastToRoom(String roomId, ChatMessage message) {
+        messagingTemplate.convertAndSend("/topic/" + roomId, message);
     }
 }

@@ -21,25 +21,25 @@ public class PokerWebSocketController {
 
     @MessageMapping("/chat.addUser")
     public void addUser(@Payload ChatMessage chatMessage, SimpMessageHeaderAccessor headerAccessor) {
-        String roomId = chatMessage.getRoomId();
+        String roomId = chatMessage.roomId();
         if (roomId == null) return;
 
-        pokerService.addUser(roomId, chatMessage.getSender());
-        headerAccessor.getSessionAttributes().put("username", chatMessage.getSender());
+        pokerService.addUser(roomId, chatMessage.sender());
+        headerAccessor.getSessionAttributes().put("username", chatMessage.sender());
         broadcastService.broadcastToRoom(roomId, chatMessage);
         broadcastService.broadcastUserStatus(roomId, pokerService.getVotingStatus(roomId));
     }
 
     @MessageMapping("/chat.sendMessage")
     public void sendMessage(@Payload ChatMessage chatMessage) {
-        String roomId = chatMessage.getRoomId();
+        String roomId = chatMessage.roomId();
         if (roomId == null) return;
 
-        if (chatMessage.getType() == MessageType.LEAVE) {
-            pokerService.removeUser(roomId, chatMessage.getSender());
+        if (chatMessage.type() == MessageType.LEAVE) {
+            pokerService.removeUser(roomId, chatMessage.sender());
         }
 
-        pokerService.updateVote(roomId, chatMessage.getSender(), chatMessage.getContent());
+        pokerService.updateVote(roomId, chatMessage.sender(), chatMessage.content());
         broadcastService.broadcastToRoom(roomId, chatMessage);
         broadcastService.broadcastUserStatus(roomId, pokerService.getVotingStatus(roomId));
     }
