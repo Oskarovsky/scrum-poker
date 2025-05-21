@@ -1,12 +1,18 @@
 package com.slyko.socketpoker.model;
 
-import lombok.Builder;
 
+import lombok.*;
+
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
 @Builder
-public record ChatMessage(
-    MessageType type,
-    String content,
-    String sender,
-    String roomId
-) {
+public class ChatMessage {
+
+    private MessageType type;
+    private String content;
+    private String sender;
+    private String roomId;
+
 }
