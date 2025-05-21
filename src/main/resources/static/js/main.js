@@ -52,7 +52,7 @@ function onConnected() {
 }
 
 function onError(error) {
-    connectingElement.textContent = 'Nie można połączyć się z serwerem. Odśwież stronę.';
+    connectingElement.textContent = 'Cannot join with server. Refresh page.';
     connectingElement.style.color = 'red';
 }
 
@@ -63,7 +63,7 @@ window.addEventListener('beforeunload', () => {
             type: 'LEAVE',
             roomId: roomId
         }));
-        stompClient.disconnect(); // Zamknij połączenie WebSocket
+        stompClient.disconnect(); // close WebSocket connection
     }
 });
 
@@ -88,32 +88,32 @@ function onMessageReceived(payload) {
 
     const messageElement = document.createElement('li');
 
-    // Typ: USERS → aktualizacja listy użytkowników
+    // Type: USERS → update users list
     if (message.type === 'USERS') {
         updateUserList(message.content);
         return;
     }
 
-    // Typ: UPDATE_VOTE → tylko backend, bez wyświetlania
+    // Type: UPDATE_VOTE → only backend (without displaying)
     if (message.type === 'UPDATE_VOTE') {
         return;
     }
 
-    // Typy systemowe: JOIN / LEAVE / CLEAR
+    // System types: JOIN / LEAVE / CLEAR
     if (['JOIN', 'LEAVE', 'CLEAR'].includes(message.type)) {
         messageElement.classList.add('event-message');
 
         let contentText = '';
 
         if (message.type === 'JOIN') {
-            contentText = `${message.sender} dołączył!`;
+            contentText = `${message.sender} joined!`;
         } else if (message.type === 'LEAVE') {
-            contentText = `${message.sender} opuścił grę!`;
+            contentText = `${message.sender} left the meeting!`;
         } else if (message.type === 'CLEAR') {
             if (message.sender === 'SYSTEM') return;
-            contentText = `${message.sender} wyczyścił wyniki głosowania.`;
+            contentText = `${message.sender} cleared the voting results.`;
 
-            // Reset lokalnego stanu
+            // Reset local state
             userVote = null;
             hasAnnouncedVote = false;
             document.querySelectorAll('.vote-btn').forEach(b => b.classList.remove('selected'));
@@ -132,7 +132,7 @@ function onMessageReceived(payload) {
         return;
     }
 
-    // Typ: VOTES → preformatowany blok z wynikami
+    // Type: VOTES → reformat block with results
     if (message.type === 'VOTES') {
         messageElement.classList.add('votes-message');
 
@@ -147,7 +147,7 @@ function onMessageReceived(payload) {
         return;
     }
 
-    // Typ domyślny: CHAT – zwykła wiadomość (np. głos oddany)
+    // Type default: CHAT – normal message (fe. vote)
     messageElement.classList.add('chat-message');
 
     const avatarElement = document.createElement('i');
@@ -161,7 +161,7 @@ function onMessageReceived(payload) {
 
     const textElement = document.createElement('p');
     textElement.textContent = message.type === 'CHAT'
-        ? `[${message.sender}] zagłosował!`
+        ? `[${message.sender}] voted!`
         : message.content;
 
     messageElement.appendChild(textElement);
@@ -249,9 +249,9 @@ document.getElementById('showVotesBtn').addEventListener('click', () => {
 
             const avg = numericVotes.length > 0
                 ? (numericVotes.reduce((a, b) => a + b, 0) / numericVotes.length).toFixed(2)
-                : 'Brak liczbowych głosów';
+                : 'There are no votes...';
 
-            const finalOutput = `📊 *Wyniki głosowania:*\n${output}\n\n➡️ Średnia: ${avg}`;
+            const finalOutput = `📊 *Voting results:*\n${output}\n\n➡️ Average: ${avg}`;
 
             stompClient.send("/app/chat.sendMessage", {}, JSON.stringify({
                 type: 'VOTES',
@@ -264,7 +264,6 @@ document.getElementById('showVotesBtn').addEventListener('click', () => {
 document.getElementById('clearVotesBtn').addEventListener('click', () => {
     fetch(`/api/votes/${roomId}`, { method: 'DELETE' })
         .then(() => {
-            console.log("Wysyłam wiadomość CLEAR");
             stompClient.send("/app/chat.sendMessage", {}, JSON.stringify({
                 type: 'CLEAR',
                 sender: username,
