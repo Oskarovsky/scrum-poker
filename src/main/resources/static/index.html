@@ -9,25 +9,25 @@
 <body>
 
 <noscript>
-    <h2>Twoja przeglądarka nie obsługuje JavaScript. Aplikacja nie zadziała.</h2>
+    <h2>Your browser doesn't support JavaScript. This application won't work without it.</h2>
 </noscript>
 
 <main class="container">
 
     <div style="margin-top: 20px;">
-        <button id="generateGameBtn" class="accent">Stwórz nową grę</button>
+        <button id="generateGameBtn" class="accent">Create new game</button>
     </div>
 
     <section id="username-page">
         <div class="username-page-container">
-            <h1 class="title">Podaj nazwę użytkownika, aby dołączyć do pokoju</h1>
+            <h1 class="title">Please enter your username to join</h1>
             <form id="usernameForm">
                 <div class="form-group">
-                    <label for="name" class="visually-hidden">Nazwa użytkownika</label>
-                    <input type="text" id="name" placeholder="Nazwa użytkownika" autocomplete="off" class="form-control" required />
+                    <label for="name" class="visually-hidden">Username</label>
+                    <input type="text" id="name" placeholder="Username" autocomplete="off" class="form-control" required />
                 </div>
                 <div class="form-group">
-                    <button type="submit" class="accent username-submit">Dołącz</button>
+                    <button type="submit" class="accent username-submit">Join</button>
                 </div>
             </form>
         </div>
@@ -40,12 +40,12 @@
                 <h2>Scrum Poker – WebSocket Room</h2>
             </header>
 
-            <div class="connecting">Łączenie...</div>
+            <div class="connecting">Connecting...</div>
 
             <ul id="messageArea" class="message-area"></ul>
 
             <form id="messageForm" name="messageForm">
-                <label for="voteButtons"><strong>Wybierz swój głos:</strong></label>
+                <label for="voteButtons"><strong>Pick a card:</strong></label>
                 <div id="voteButtons" class="vote-grid">
                     <button type="button" class="vote-btn" data-value="0.5">0.5</button>
                     <button type="button" class="vote-btn" data-value="1">1</button>
@@ -64,8 +64,8 @@
             </form>
 
             <div class="vote-controls">
-                <button id="showVotesBtn" class="accent">Pokaż wszystkie głosy</button>
-                <button id="clearVotesBtn" class="secondary">Wyczyść wszystkie głosy</button>
+                <button id="showVotesBtn" class="accent">Reveal votes</button>
+                <button id="clearVotesBtn" class="secondary">Clear votes</button>
             </div>
 
         </div>
@@ -73,7 +73,7 @@
 
     <!-- Lista uczestników -->
     <aside class="user-sidebar" style="position: absolute; top: 80px; right: 10px; width: 200px;">
-        <h4>Uczestnicy:</h4>
+        <h4>Team:</h4>
         <ul id="userList" class="user-list" style="list-style: none; padding-left: 0;"></ul>
     </aside>
 
